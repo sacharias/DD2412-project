@@ -40,7 +40,7 @@ def createDatasetSplit(dataset, labeledSize, validationSize, seed = 1):
 
     part1, part2, part3 = torch.utils.data.random_split(dataset, [labeledSize, len(dataset) - totalSize, validationSize], generator=torch.Generator().manual_seed(seed))
 
-    part1.dataset.transform = transforms.Compose(weekly_augment)
+    part1.dataset.transform = weekly_augment
 
     labeledDataset = part1
 
