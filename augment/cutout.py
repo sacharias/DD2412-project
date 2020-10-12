@@ -15,11 +15,11 @@ class CutoutTransform:
     def __call__(self, img):
         _, h, w = img.shape
 
-        # Draw random center point
+        # Pick random center point
         y = np.random.randint(h)
         x = np.random.randint(w)
 
-        # Set corners of the cutout mask
+        # Calculate corners of cutout mask
         offset = self.size // 2
         y1 = np.clip(y - offset, 0, h)
         y2 = np.clip(y + offset, 0, h)
