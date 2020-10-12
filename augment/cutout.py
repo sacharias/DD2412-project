@@ -13,7 +13,7 @@ class CutoutTransform:
         self.size = size
 
     def __call__(self, img):
-        _, h, w = img.shape
+        w, h = img.size
 
         # Pick random center point
         y = np.random.randint(h)
@@ -27,6 +27,9 @@ class CutoutTransform:
         x2 = np.clip(x + offset, 0, w)
 
         # Apply cutout mask
-        img[:, y1:y2, x1:x2] = 0
+        pixels = img.load()
+        for i in range(x1, x2):
+            for j in range(y1, y2):
+                pixels[i, j] = (127, 127, 127)
 
         return img

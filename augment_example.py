@@ -15,10 +15,10 @@ torch.manual_seed(0)
 
 transform = transforms.Compose(
     [
+        CutoutTransform(),
         RandAugmentTransform(),
         transforms.ToTensor(),
         transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
-        CutoutTransform(),
     ]
 )
 
