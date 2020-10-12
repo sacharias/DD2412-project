@@ -7,6 +7,7 @@ import torchvision
 import torch
 
 from augment.rand_augment import RandAugmentTransform
+from augment.cutout import CutoutTransform
 
 np.random.seed(0)
 torch.manual_seed(0)
@@ -17,6 +18,7 @@ transform = transforms.Compose(
         RandAugmentTransform(),
         transforms.ToTensor(),
         transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
+        CutoutTransform(),
     ]
 )
 
@@ -31,4 +33,3 @@ def imshow(img):
 dataiter = iter(trainloader)
 images, labels = dataiter.next()
 imshow(torchvision.utils.make_grid(images))
-
