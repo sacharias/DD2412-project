@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from tqdm import tqdm
+from tqdm.autonotebook import tqdm
 
 def train(net, labeled_loader, unlabeled_loader, train_optimizer, threshold, lambda_u):
     net.train()
@@ -12,8 +12,8 @@ def train(net, labeled_loader, unlabeled_loader, train_optimizer, threshold, lam
 
 
     for labeled_batch, unlabeled_batch in train_bar:
-        x_l , y_l = labeled_batch[0].to("cuda"),labeled_batch[1].to("cuda")
-        xW_u, xS_u, y_u = unlabeled_batch[0].to("cuda"),unlabeled_batch[1].to("cuda"),unlabeled_batch[2].to("cuda")
+        x_l , y_l = labeled_batch[0].to('cuda'),labeled_batch[1].to('cuda')
+        xW_u, xS_u, y_u = unlabeled_batch[0].to('cuda'),unlabeled_batch[1].to('cuda'),unlabeled_batch[2].to('cuda')
 
         # Maybe we could cat the tensors then chunk the result
         logits_l = net(x_l)
@@ -52,6 +52,6 @@ def train(net, labeled_loader, unlabeled_loader, train_optimizer, threshold, lam
         total_num += total_samples
         total_loss += loss.item() * total_samples
 
-        train_bar.set_description('Loss: {:.4f}, unlabeled samples:{}, accuracy of pseudolabels{:.4f}'.format(total_loss/total_num,unlabeled_samples_accepted,total_correct/(total_accepted+1**-20)))
+        train_bar.set_description('Loss: {:.4f}, Unlabeled samples: {}, Accuracy of pseudolabels: {:.4f}'.format(total_loss/total_num, unlabeled_samples_accepted, total_correct/(total_accepted+1**-20)))
 
     return total_loss/total_num, total_correct/(total_accepted+1**-20)
