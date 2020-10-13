@@ -1,57 +1,70 @@
+import math
 import torch
 import torch.nn as nn
 from tqdm import tqdm
 
-def train(net, labeled_loader, unlabeled_loader, train_optimizer, threshold, lambda_u):
+def train(net, labeled_loader, unlabeled_loader, train_optimizer, threshold, lambda_u, epochs):
     net.train()
     CrossEntropyLoss = nn.CrossEntropyLoss()
     SoftMax = nn.Softmax()
 
-    data_loader = zip(labeled_loader, unlabeled_loader)
-    total_loss, total_num, total_correct, total_accepted, train_bar = 0.0, 0, 0, 0, tqdm(data_loader)
+    # Save values for cosine learning rate decay
+    initial_lr = train_optimizer.param_groups[0]['lr']
+    total_steps = min(len(labeled_loader), len(unlabeled_loader)) * epochs
+    current_step = 0
 
+    for epoch in range(1, epochs + 1):
+        print('Current epoch:', epoch)
 
-    for labeled_batch, unlabeled_batch in train_bar:
-        x_l , y_l = labeled_batch[0].to('cuda'),labeled_batch[1].to('cuda')
-        xW_u, xS_u, y_u = unlabeled_batch[0].to('cuda'),unlabeled_batch[1].to('cuda'),unlabeled_batch[2].to('cuda')
+        data_loader = zip(labeled_loader, unlabeled_loader)
+        total_loss, total_num, total_correct, total_accepted, train_bar = 0.0, 0, 0, 0, tqdm(data_loader)
 
-        # Maybe we could cat the tensors then chunk the result
-        logits_l = net(x_l)
-        logitsW_u = net(xW_u)
-        logitsS_u = net(xS_u)
+        for labeled_batch, unlabeled_batch in train_bar:
+            x_l, y_l = labeled_batch[0].to('cuda'),labeled_batch[1].to('cuda')
+            xW_u, xS_u, y_u = unlabeled_batch[0].to('cuda'),unlabeled_batch[1].to('cuda'),unlabeled_batch[2].to('cuda')
 
-        loss_l = CrossEntropyLoss(logits_l,y_l)
+            # Maybe we could cat the tensors then chunk the result
+            logits_l = net(x_l)
+            logitsW_u = net(xW_u)
+            logitsS_u = net(xS_u)
 
-        # I believe we need to stop the gradient here
-        predicitionW_u = SoftMax(logitsW_u).detach()
-        mask = predicitionW_u.ge(threshold)
+            loss_l = CrossEntropyLoss(logits_l, y_l)
 
-        indices = mask.sum(dim=1).nonzero().flatten()
-        unlabeled_samples_accepted = len(indices)
-        pseudolabel = predicitionW_u.argmax(dim=1)
+            # I believe we need to stop the gradient here
+            predicitionW_u = SoftMax(logitsW_u).detach()
+            mask = predicitionW_u.ge(threshold)
 
-        if unlabeled_samples_accepted > 0:
-            loss_u = CrossEntropyLoss(logitsS_u[indices,:], pseudolabel[indices])
-        else:
-            loss_u = 0
+            indices = mask.sum(dim=1).nonzero().flatten()
+            unlabeled_samples_accepted = len(indices)
+            pseudolabel = predicitionW_u.argmax(dim=1)
 
-        loss = loss_l + lambda_u * loss_u
+            if unlabeled_samples_accepted > 0:
+                loss_u = CrossEntropyLoss(logitsS_u[indices,:], pseudolabel[indices])
+            else:
+                loss_u = 0
 
-        train_optimizer.zero_grad()
-        loss.backward()
-        train_optimizer.step()
+            loss = loss_l + lambda_u * loss_u
 
+            train_optimizer.zero_grad()
+            loss.backward()
+            train_optimizer.step()
 
-        correct_pseudolabels = (pseudolabel[indices] == y_u[indices]).sum()
+            correct_pseudolabels = (pseudolabel[indices] == y_u[indices]).sum()
 
-        total_samples = y_l.size()[0] + unlabeled_samples_accepted
+            total_samples = y_l.size()[0] + unlabeled_samples_accepted
 
-        total_correct += correct_pseudolabels
-        total_accepted += unlabeled_samples_accepted
+            total_correct += correct_pseudolabels
+            total_accepted += unlabeled_samples_accepted
 
-        total_num += total_samples
-        total_loss += loss.item() * total_samples
+            total_num += total_samples
+            total_loss += loss.item() * total_samples
 
-        train_bar.set_description('Loss: {:.4f}, Unlabeled samples: {}, Accuracy of pseudolabels: {:.4f}'.format(total_loss/total_num, unlabeled_samples_accepted, total_correct/(total_accepted+1**-20)))
+            # Cosine learning rate decay
+            lr = initial_lr * math.cos(7 * math.pi * current_step / (16 * total_steps))
+            for group in train_optimizer.param_groups:
+                group['lr'] = lr
+            current_step += 1
 
-    return total_loss/total_num, total_correct/(total_accepted+1**-20)
+            train_bar.set_description('Loss: {:.4f}, Unlabeled samples: {}, Accuracy of pseudolabels: {:.4f}, LR: {:.4f}'.format(total_loss/total_num, unlabeled_samples_accepted, total_correct/(total_accepted+1e-20), lr))
+
+    return total_loss/total_num, total_correct/(total_accepted+1e-20)
