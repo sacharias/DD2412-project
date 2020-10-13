@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from tqdm.autonotebook import tqdm
+from tqdm import tqdm
 
 def train(net, labeled_loader, unlabeled_loader, train_optimizer, threshold, lambda_u):
     net.train()
