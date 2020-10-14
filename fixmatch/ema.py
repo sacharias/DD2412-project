@@ -1,4 +1,5 @@
 import copy
+import torch
 
 class EMA():
   def __init__(self, decay, model):
