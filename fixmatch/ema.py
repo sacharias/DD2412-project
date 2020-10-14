@@ -13,4 +13,4 @@ class EMA():
     #torch.no_grad kanske gör det snabbare
     with torch.no_grad():
       for name, param in model.state_dict().items():
-        state_dict_emamodel[name] = decay * state_dict_emamodel[name]  + (1 - decay) * param
+        state_dict_emamodel[name] = self.decay * state_dict_emamodel[name]  + (1 - self.decay) * param
