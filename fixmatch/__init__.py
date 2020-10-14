@@ -3,10 +3,10 @@ import torch
 import torch.nn as nn
 from tqdm import tqdm
 
-def train(net, labeled_loader, unlabeled_loader, train_optimizer, threshold, lambda_u, epochs):
+def train(net, labeled_loader, unlabeled_loader, train_optimizer, threshold, lambda_u, epochs, ema_model):
     net.train()
-    CrossEntropyLoss = nn.CrossEntropyLoss()
-    SoftMax = nn.Softmax()
+    CrossEntropyLoss = nn.CrossEntropyLoss(reduction='mean')
+    SoftMax = nn.Softmax(dim=1)
 
     # Save values for cosine learning rate decay
     initial_lr = train_optimizer.param_groups[0]['lr']
@@ -49,6 +49,8 @@ def train(net, labeled_loader, unlabeled_loader, train_optimizer, threshold, lam
             loss.backward()
             train_optimizer.step()
 
+            ema_model.update(net)
+            
             correct_pseudolabels = (pseudolabel[indices] == y_u[indices]).sum()
 
             total_samples = y_l.size()[0] + unlabeled_samples_accepted
