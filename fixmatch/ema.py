@@ -8,9 +8,10 @@ class EMA():
       self.emamodel.cuda()
   
   def update(self, model):
-    state_dict_emamodel = self.emamodel.state_dict()
     #Jag är paranoid att gradienten kanske flödar igenom?
     #torch.no_grad kanske gör det snabbare
+    model_state_dict = model.state_dict()
+
     with torch.no_grad():
-      for name, param in model.state_dict().items():
-        state_dict_emamodel[name] = self.decay * state_dict_emamodel[name]  + (1 - self.decay) * param
+      for name, param in self.emamodel.state_dict().items():
+        param.copy_(decay * param + (1 - decay) * model_state_dict[name])
