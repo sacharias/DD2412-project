@@ -14,4 +14,4 @@ class EMA():
 
     with torch.no_grad():
       for name, param in self.emamodel.state_dict().items():
-        param.copy_(decay * param + (1 - decay) * model_state_dict[name])
+        param.copy_(self.decay * param + (1 - self.decay) * model_state_dict[name])
