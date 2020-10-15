@@ -95,7 +95,7 @@ def train(net, labeled_loader, unlabeled_loader, train_optimizer, threshold, lam
         # Save logs and weights
         if log_file is not None:
             with open(log_file, 'a') as f:
-                f.write(f'{epoch},{total_loss/total_num},{total_correct/(total_accepted+1e-20)}\n')
+                f.write(f'{epoch},{total_loss/total_num:.4f},{total_correct/(total_accepted+1e-20):.4f}\n')
         if epoch % 10 == 0 and weight_dir is not None:
             save_weights(weight_dir=weight_dir,
                          epoch=epoch,

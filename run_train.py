@@ -59,17 +59,23 @@ validation_dataloader = DataLoader(validation_dataset, batch_size=args.batch_siz
 # Set device
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
-# Print info
-print('Starting training with:')
-print('    Size of labeled dataset:', len(labeled_dataset))
-print('    Size of unlabeled dataset:', len(unlabled_dataset))
-print('    Size of validation dataset:', len(validation_dataset))
-print('    Size of test dataset:', len(testset))
-print('    Training using device:', device)
-print('    Saving history to:', args.history)
-
-# Create history directory and log file
+# Create history directory
 os.mkdir(args.history)
+
+# Print and save info
+info = '\n'.join([
+    'Starting training with:',
+    f'    Size of labeled dataset: {len(labeled_dataset)}',
+    f'    Size of unlabeled dataset: {len(unlabled_dataset)}',
+    f'    Size of validation dataset: {len(validation_dataset)}',
+    f'    Size of test dataset: {len(testset)}',
+    f'    Training using device: {device}',
+    f'    Saving history to: {args.history}',
+    f'\nArgs: {vars(args)}'
+])
+print(info)
+with open(os.path.join(args.history, 'info.txt'), 'w') as f:
+    f.write(info + '\n')
 
 model = WRN(num_classes=10).to(device)
 
