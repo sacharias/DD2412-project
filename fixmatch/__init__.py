@@ -27,7 +27,8 @@ def train(net, labeled_loader, unlabeled_loader, train_optimizer, threshold, lam
 
     # Write header to log file and save initial weights
     if log_file is not None:
-        log_file.write('loss,pseudoacc\n')
+        with open(log_file, 'w') as f:
+            f.write('loss,pseudoacc\n')
     save_weights(weight_dir=weight_dir,
                  epoch=0,
                  loss=-1,
@@ -93,7 +94,8 @@ def train(net, labeled_loader, unlabeled_loader, train_optimizer, threshold, lam
 
         # Save logs and weights
         if log_file is not None:
-            log_file.write(f'{total_loss/total_num},{total_correct/(total_accepted+1e-20)}\n')
+            with open(log_file, 'a') as f:
+                f.write(f'{total_loss/total_num},{total_correct/(total_accepted+1e-20)}\n')
         if epoch % 10 == 0 and weight_dir is not None:
             save_weights(weight_dir=weight_dir,
                          epoch=epoch,

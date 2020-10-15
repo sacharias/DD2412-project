@@ -70,11 +70,11 @@ print('    Saving history to:', args.history)
 
 # Create history directory and log file
 os.mkdir(args.history)
-log_file = open(os.path.join(args.history, 'log.csv'), 'a')
 
 model = WRN(num_classes=10).to(device)
 
 optimizer = optim.SGD(model.parameters(), lr=0.03, momentum=0.9, weight_decay=0.0005,  nesterov=True)
 ema_model = EMA(args.decay, model, device)
 
-train_loss, pseudolabel_acc = fixmatch.train(model, labeled_dataloader, unlabled_dataloader, optimizer, args.threshold, args.lambda_u, args.epochs, ema_model, device, log_file=log_file, weight_dir=args.history)
+train_loss, pseudolabel_acc = fixmatch.train(model, labeled_dataloader, unlabled_dataloader, optimizer, args.threshold, args.lambda_u, args.epochs, ema_model, device,
+                                             log_file=os.path.join(args.history, 'log.csv'), weight_dir=args.history)
