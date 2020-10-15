@@ -46,14 +46,14 @@ class unlabeled(Dataset):
         return len(self.data)
 
 
-def create_dataset_split(dataset, labeledSize, validationSize, seed=1):
+def create_dataset_split(dataset, labeled_size, validation_size, seed=1):
     """Randomly split a dataset into non-overlapping new datasets of given lengths.
     Optionally fix the generator for reproducible results with the seed.
     """
 
-    totalSize = labeledSize + validationSize
+    totalSize = labeled_size + validation_size
 
-    part1, part2, part3 = torch.utils.data.random_split(dataset, [labeledSize, len(dataset) - totalSize, validationSize], generator=torch.Generator().manual_seed(seed))
+    part1, part2, part3 = torch.utils.data.random_split(dataset, [labeled_size, len(dataset) - totalSize, validation_size])#, generator=torch.Generator().manual_seed(seed))
 
     part1.dataset.transform = weakly_augment
 

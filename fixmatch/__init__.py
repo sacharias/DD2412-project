@@ -1,10 +1,12 @@
+import os
 import math
 import torch
 import torch.nn as nn
 from tqdm import tqdm
 
-def train(net, labeled_loader, unlabeled_loader, train_optimizer, threshold, lambda_u, epochs, ema_model):
+def train(net, labeled_loader, unlabeled_loader, train_optimizer, threshold, lambda_u, epochs, ema_model, device, log_file=None, history_dir=None):
     net.train()
+    net.to(device)
     CrossEntropyLoss = nn.CrossEntropyLoss(reduction='mean')
     SoftMax = nn.Softmax(dim=1)
 
@@ -13,6 +15,10 @@ def train(net, labeled_loader, unlabeled_loader, train_optimizer, threshold, lam
     total_steps = min(len(labeled_loader), len(unlabeled_loader)) * epochs
     current_step = 0
 
+    # Write header to log file
+    if log_file is not None:
+        log_file.write('loss,pseudoacc\n')
+
     for epoch in range(1, epochs + 1):
         print('Current epoch:', epoch)
 
@@ -20,8 +26,8 @@ def train(net, labeled_loader, unlabeled_loader, train_optimizer, threshold, lam
         total_loss, total_num, total_correct, total_accepted, train_bar = 0.0, 0, 0, 0, tqdm(data_loader)
 
         for labeled_batch, unlabeled_batch in train_bar:
-            x_l, y_l = labeled_batch[0].to('cuda'),labeled_batch[1].to('cuda')
-            xW_u, xS_u, y_u = unlabeled_batch[0].to('cuda'),unlabeled_batch[1].to('cuda'),unlabeled_batch[2].to('cuda')
+            x_l, y_l = labeled_batch[0].to(device),labeled_batch[1].to(device)
+            xW_u, xS_u, y_u = unlabeled_batch[0].to(device),unlabeled_batch[1].to(device),unlabeled_batch[2].to(device)
 
             # Maybe we could cat the tensors then chunk the result
             logits_l = net(x_l)
@@ -50,7 +56,7 @@ def train(net, labeled_loader, unlabeled_loader, train_optimizer, threshold, lam
             train_optimizer.step()
 
             ema_model.update(net)
-            
+
             correct_pseudolabels = (pseudolabel[indices] == y_u[indices]).sum()
 
             total_samples = y_l.size()[0] + unlabeled_samples_accepted
@@ -68,5 +74,16 @@ def train(net, labeled_loader, unlabeled_loader, train_optimizer, threshold, lam
             current_step += 1
 
             train_bar.set_description('Loss: {:.4f}, Unlabeled samples: {}, Accuracy of pseudolabels: {:.4f}, LR: {:.4f}'.format(total_loss/total_num, unlabeled_samples_accepted, total_correct/(total_accepted+1e-20), lr))
+
+        # Save logs and weights
+        if log_file is not None:
+            log_file.write(f'{total_loss/total_num},{total_correct/(total_accepted+1e-20)}\n')
+        if history_dir is not None:
+            torch.save({
+                'epoch': epoch,
+                'model_state_dict': net.state_dict(),
+                'optimizer_state_dict': train_optimizer.state_dict(),
+                'loss': total_loss/total_num,
+            }, os.path.join(history_dir, f'epoch-{epoch}.pt'))
 
     return total_loss/total_num, total_correct/(total_accepted+1e-20)

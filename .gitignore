@@ -1,4 +1,5 @@
 data/
+history/train*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

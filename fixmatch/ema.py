@@ -2,11 +2,11 @@ import copy
 import torch
 
 class EMA():
-  def __init__(self, decay, model):
+  def __init__(self, decay, model, device):
       self.decay = decay
       self.emamodel = copy.deepcopy(model)
-      self.emamodel.cuda()
-  
+      self.emamodel.to(device)
+
   def update(self, model):
     #Jag är paranoid att gradienten kanske flödar igenom?
     #torch.no_grad kanske gör det snabbare
