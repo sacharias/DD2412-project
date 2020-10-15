@@ -1,3 +1,4 @@
+from tqdm import tqdm
 import torch
 from torch.utils.data import DataLoader
 import torchvision
@@ -20,7 +21,7 @@ testset = torchvision.datasets.CIFAR10(
 
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 model = WRN(num_classes=10).to(device)
-model.load_state_dict(torch.load(PATH))
+model.load_state_dict(torch.load(PATH, map_location=device)['model_state_dict'])
 
 testloader = DataLoader(testset, batch_size=64, shuffle=False, num_workers=4, pin_memory=True)
 
@@ -28,7 +29,7 @@ correct = 0
 total = 0
 model.eval()
 with torch.no_grad():
-    for data in testloader:
+    for data in tqdm(testloader):
         images, labels = data[0].to(device), data[1].to(device)
         outputs = model(images)
         _, predicted = torch.max(outputs.data, 1)
