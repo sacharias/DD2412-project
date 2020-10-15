@@ -70,7 +70,7 @@ print('    Saving history to:', args.history)
 
 # Create history directory and log file
 os.mkdir(args.history)
-log_file = open(os.path.join(args.history, 'log.csv'), 'w')
+log_file = open(os.path.join(args.history, 'log.csv'), 'a')
 
 model = WRN(num_classes=10).to(device)
 

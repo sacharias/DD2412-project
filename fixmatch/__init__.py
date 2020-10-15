@@ -4,6 +4,16 @@ import torch
 import torch.nn as nn
 from tqdm import tqdm
 
+def save_weights(weight_dir, epoch, loss, net, optimizer, ema):
+    if weight_dir is not None:
+        torch.save({
+            'epoch': epoch,
+            'model_state_dict': net,
+            'optimizer_state_dict': optimizer,
+            'loss': loss,
+        }, os.path.join(weight_dir, f'net-{epoch:05d}.pt'))
+        torch.save(ema, os.path.join(weight_dir, f'ema-{epoch:05d}.pt'))
+
 def train(net, labeled_loader, unlabeled_loader, train_optimizer, threshold, lambda_u, epochs, ema_model, device, log_file=None, weight_dir=None):
     net.train()
     net.to(device)
@@ -15,9 +25,15 @@ def train(net, labeled_loader, unlabeled_loader, train_optimizer, threshold, lam
     total_steps = min(len(labeled_loader), len(unlabeled_loader)) * epochs
     current_step = 0
 
-    # Write header to log file
+    # Write header to log file and save initial weights
     if log_file is not None:
         log_file.write('loss,pseudoacc\n')
+    save_weights(weight_dir=weight_dir,
+                 epoch=0,
+                 loss=-1,
+                 net=net.state_dict(),
+                 optimizer=train_optimizer.state_dict(),
+                 ema=ema_model.emamodel.state_dict())
 
     for epoch in range(1, epochs + 1):
         print('Current epoch:', epoch)
@@ -78,13 +94,12 @@ def train(net, labeled_loader, unlabeled_loader, train_optimizer, threshold, lam
         # Save logs and weights
         if log_file is not None:
             log_file.write(f'{total_loss/total_num},{total_correct/(total_accepted+1e-20)}\n')
-        if weight_dir is not None:
-            torch.save({
-                'epoch': epoch,
-                'model_state_dict': net.state_dict(),
-                'optimizer_state_dict': train_optimizer.state_dict(),
-                'loss': total_loss/total_num,
-            }, os.path.join(weight_dir, f'net-{epoch:05d}.pt'))
-            torch.save(ema_model.emamodel.state_dict(), os.path.join(weight_dir, f'ema-{epoch:05d}.pt'))
+        if epoch % 10 == 0 and weight_dir is not None:
+            save_weights(weight_dir=weight_dir,
+                         epoch=epoch,
+                         loss=total_loss/total_num,
+                         net=net.state_dict(),
+                         optimizer=train_optimizer.state_dict(),
+                         ema=ema_model.emamodel.state_dict())
 
     return total_loss/total_num, total_correct/(total_accepted+1e-20)
