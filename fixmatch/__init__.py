@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 from tqdm import tqdm
 
-def train(net, labeled_loader, unlabeled_loader, train_optimizer, threshold, lambda_u, epochs, ema_model, device, log_file=None, history_dir=None):
+def train(net, labeled_loader, unlabeled_loader, train_optimizer, threshold, lambda_u, epochs, ema_model, device, log_file=None, weight_dir=None):
     net.train()
     net.to(device)
     CrossEntropyLoss = nn.CrossEntropyLoss(reduction='mean')
@@ -78,12 +78,13 @@ def train(net, labeled_loader, unlabeled_loader, train_optimizer, threshold, lam
         # Save logs and weights
         if log_file is not None:
             log_file.write(f'{total_loss/total_num},{total_correct/(total_accepted+1e-20)}\n')
-        if history_dir is not None:
+        if weight_dir is not None:
             torch.save({
                 'epoch': epoch,
                 'model_state_dict': net.state_dict(),
                 'optimizer_state_dict': train_optimizer.state_dict(),
                 'loss': total_loss/total_num,
-            }, os.path.join(history_dir, f'epoch-{epoch}.pt'))
+            }, os.path.join(weight_dir, f'net-{epoch:05d}.pt'))
+            torch.save(ema_model.state_dict(), os.path.join(weight_dir, f'ema-{epoch:05d}.pt'))
 
     return total_loss/total_num, total_correct/(total_accepted+1e-20)
