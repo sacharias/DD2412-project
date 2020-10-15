@@ -85,6 +85,6 @@ def train(net, labeled_loader, unlabeled_loader, train_optimizer, threshold, lam
                 'optimizer_state_dict': train_optimizer.state_dict(),
                 'loss': total_loss/total_num,
             }, os.path.join(weight_dir, f'net-{epoch:05d}.pt'))
-            torch.save(ema_model.state_dict(), os.path.join(weight_dir, f'ema-{epoch:05d}.pt'))
+            torch.save(ema_model.emamodel.state_dict(), os.path.join(weight_dir, f'ema-{epoch:05d}.pt'))
 
     return total_loss/total_num, total_correct/(total_accepted+1e-20)
