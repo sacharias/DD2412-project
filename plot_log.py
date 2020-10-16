@@ -5,7 +5,12 @@ parser = ArgumentParser(description='Plot a csv log.')
 parser.add_argument('path', type=str, help='The path to the csv file.')
 parser.add_argument('x', type=str, help='The attribute to use as x.')
 parser.add_argument('y', type=str, help='The attribute to use as y.')
+parser.add_argument('--xlabel', type=str, help='The label for the x-axis.')
+parser.add_argument('--ylabel', type=str, help='The label for the y-axis.')
 args = parser.parse_args()
+
+args.xlabel = args.x if args.xlabel is None else args.xlabel
+args.ylabel = args.y if args.ylabel is None else args.ylabel
 
 with open(args.path, 'r') as f:
     lines = f.read().splitlines()
@@ -22,4 +27,4 @@ def plot(x, y, xlabel, ylabel):
     plt.ylabel(ylabel)
     plt.show()
 
-plot(d[args.x], d[args.y], args.x, args.y)
+plot(d[args.x], d[args.y], args.xlabel, args.ylabel)
