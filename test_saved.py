@@ -1,11 +1,15 @@
+from argparse import ArgumentParser
 from tqdm import tqdm
 import torch
 from torch.utils.data import DataLoader
 import torchvision
 from torchvision import transforms
 from fixmatch.models import WRN
+from fixmatch.ema import EMA
 
-PATH = 'net-00340.pt'
+parser = ArgumentParser(description='Test a model on the test set.')
+parser.add_argument('path', type=str, help='Number of labeled samples.')
+args = parser.parse_args()
 
 testset = torchvision.datasets.CIFAR10(
     root='./data',
@@ -21,7 +25,13 @@ testset = torchvision.datasets.CIFAR10(
 
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 model = WRN(num_classes=10).to(device)
-model.load_state_dict(torch.load(PATH, map_location=device)['model_state_dict'])
+
+loaded = torch.load(args.path, map_location=device)
+if isinstance(loaded, dict):
+    state_dict = loaded['model_state_dict']
+else:
+    state_dict = loaded
+model.load_state_dict(state_dict)
 
 testloader = DataLoader(testset, batch_size=64, shuffle=False, num_workers=4, pin_memory=True)
 
@@ -36,4 +46,4 @@ with torch.no_grad():
         total += labels.size(0)
         correct += (predicted == labels).sum().item()
 
-print('Accuracy of the network on the 10000 test images: %d %%' % (100 * correct / total))
+print(f'Accuracy of the network on the {len(testset)} test images: {100 * correct / total:.2f}%')
