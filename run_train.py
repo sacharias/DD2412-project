@@ -46,7 +46,6 @@ labeled_dataset, unlabled_dataset, validation_dataset = create_dataset_split(
     dataset=trainset,
     labeled_size=args.labeled_size,
     validation_size=args.validation_size,
-    seed=args.seed
 )
 
 # Create dataloaders
