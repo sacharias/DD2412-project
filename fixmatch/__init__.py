@@ -98,6 +98,7 @@ def train(net, labeled_dataloader, unlabeled_dataloader, validation_dataloader, 
             train_bar.set_description('Train loss: {:.4f}, Unlabeled samples: {}, Accuracy of pseudolabels: {:.4f}, LR: {:.4f}'.format(total_loss/total_num, unlabeled_samples_accepted, total_correct/(total_accepted+1e-20), lr))
 
         # Calculate val_loss/acc
+        net.eval()
         total_val, correct_val, loss_val = 0, 0, 0.0
         for x_val, y_val in validation_dataloader:
             x_val, y_val = x_val.to(device), y_val.to(device)
@@ -106,6 +107,7 @@ def train(net, labeled_dataloader, unlabeled_dataloader, validation_dataloader, 
             _, predicted_val = torch.max(logits_val, 1)
             total_val += y_val.size(0)
             correct_val += (predicted_val == y_val).sum().item()
+        net.train()
 
         # Save logs and weights
         if log_file is not None:
