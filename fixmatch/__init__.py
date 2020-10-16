@@ -31,7 +31,7 @@ def train(net, labeled_dataloader, unlabeled_dataloader, validation_dataloader, 
     # Write header to log file and save initial weights
     if log_file is not None:
         with open(log_file, 'w') as f:
-            f.write('epoch,train_loss,val_loss,val_acc,pseudo_acc\n')
+            f.write('epoch,train_loss,val_loss,val_acc,pseudo_acc,accepted\n')
     save_weights(weight_dir=weight_dir,
                  epoch=0,
                  loss=-1,
@@ -119,7 +119,7 @@ def train(net, labeled_dataloader, unlabeled_dataloader, validation_dataloader, 
             net.train()
         if log_file is not None:
             with open(log_file, 'a') as f:
-                f.write(f'{epoch},{total_loss / total_num:.4f},{loss_val / total_val:.4f},{correct_val / total_val:.4f},{total_correct/(total_accepted+1e-20):.4f}\n')
+                f.write(f'{epoch},{total_loss / total_num:.4f},{loss_val / total_val:.4f},{correct_val / total_val:.4f},{total_correct/(total_accepted+1e-20):.4f},{total_accepted}\n')
 
 
     return total_loss/total_num, total_correct/(total_accepted+1e-20)
