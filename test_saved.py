@@ -8,7 +8,7 @@ from fixmatch.models import WRN
 from fixmatch.ema import EMA
 
 parser = ArgumentParser(description='Test a model on the test set.')
-parser.add_argument('path', type=str, help='Number of labeled samples.')
+parser.add_argument('path', type=str, help='The path to the model.')
 args = parser.parse_args()
 
 testset = torchvision.datasets.CIFAR10(
