@@ -27,6 +27,9 @@ parser.add_argument('--seed', type=int, help='The random seed.', default=1337)
 parser.add_argument('--history', type=str, help='The directory where the training history should be saved.', default=f'history/train-{datetime.now().strftime("%Y-%m-%d-%H-%M-%S")}')
 args = parser.parse_args()
 
+# Seed the RNG
+torch.manual_seed(args.seed)
+
 # Download dataset
 if args.dataset == 'CIFAR-10':
     trainset = torchvision.datasets.CIFAR10(
