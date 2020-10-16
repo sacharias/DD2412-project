@@ -27,7 +27,7 @@ device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 model = WRN(num_classes=10).to(device)
 
 loaded = torch.load(args.path, map_location=device)
-if isinstance(loaded, dict):
+if 'model_state_dict' in loaded:
     state_dict = loaded['model_state_dict']
 else:
     state_dict = loaded
