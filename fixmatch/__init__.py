@@ -99,14 +99,15 @@ def train(net, labeled_dataloader, unlabeled_dataloader, validation_dataloader, 
 
         # Calculate val_loss/acc
         net.eval()
-        total_val, correct_val, loss_val = 0, 0, 0.0
-        for x_val, y_val in validation_dataloader:
-            x_val, y_val = x_val.to(device), y_val.to(device)
-            logits_val = net(x_val)
-            loss_val += CrossEntropyLoss(logits_val, y_val)
-            _, predicted_val = torch.max(logits_val, 1)
-            total_val += y_val.size(0)
-            correct_val += (predicted_val == y_val).sum().item()
+        with torch.no_grad():
+            total_val, correct_val, loss_val = 0, 0, 0.0
+            for x_val, y_val in validation_dataloader:
+                x_val, y_val = x_val.to(device), y_val.to(device)
+                logits_val = net(x_val)
+                loss_val += CrossEntropyLoss(logits_val, y_val)
+                _, predicted_val = torch.max(logits_val, 1)
+                total_val += y_val.size(0)
+                correct_val += (predicted_val == y_val).sum().item()
         net.train()
 
         # Save logs and weights
