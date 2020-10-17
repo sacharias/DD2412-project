@@ -69,7 +69,7 @@ def train(net, labeled_dataloader, unlabeled_dataloader, validation_dataloader, 
                 pseudolabel = predicitionW_u.argmax(dim=1)
 
                 if unlabeled_samples_accepted > 0:
-                    loss_u = nn.CrossEntropyLoss(logitsS_u[indices,:], pseudolabel[indices],reduction='sum')/y_u.size()[0]
+                    loss_u = CrossEntropyLoss(logitsS_u[indices,:], pseudolabel[indices])
 
                 correct_pseudolabels = (pseudolabel[indices] == y_u[indices]).sum()
 
@@ -81,7 +81,7 @@ def train(net, labeled_dataloader, unlabeled_dataloader, validation_dataloader, 
 
             ema_model.update(net)
 
-            total_samples = y_l.size()[0] + y_u.size()[0]
+            total_samples = y_l.size()[0] + unlabeled_samples_accepted
 
             total_correct += correct_pseudolabels
             total_accepted += unlabeled_samples_accepted
