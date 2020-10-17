@@ -81,7 +81,7 @@ def train(net, labeled_dataloader, unlabeled_dataloader, validation_dataloader, 
 
             ema_model.update(net)
 
-            total_samples = y_l.size()[0] + y_u.size()[1]
+            total_samples = y_l.size()[0] + y_u.size()[0]
 
             total_correct += correct_pseudolabels
             total_accepted += unlabeled_samples_accepted
