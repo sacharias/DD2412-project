@@ -13,7 +13,7 @@ weakly_augment = transforms.Compose(
         transforms.RandomHorizontalFlip(p=0.5),
         transforms.RandomAffine(0, translate=(0.125, 0.125)),
         transforms.ToTensor(),
-        transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+        transforms.Normalize((0.4914, 0.4822, 0.4465),(0.2470, 0.2435, 0.2616))
     ]
 )
 
@@ -22,7 +22,7 @@ strongly_augment = transforms.Compose(
         CutoutTransform(),
         RandAugmentTransform(),
         transforms.ToTensor(),
-        transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+        transforms.Normalize((0.4914, 0.4822, 0.4465),(0.2470, 0.2435, 0.2616))
     ]
 )
 
@@ -68,7 +68,7 @@ def create_dataset_split(dataset, labeled_size, validation_size):
     part3.dataset.transform = transforms.Compose(
         [
             transforms.ToTensor(),
-            transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+            transforms.Normalize((0.4914, 0.4822, 0.4465),(0.2470, 0.2435, 0.2616))
         ]
     )
 
