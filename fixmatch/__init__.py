@@ -62,16 +62,14 @@ def train(net, labeled_dataloader, unlabeled_dataloader, validation_dataloader, 
             if unlabeled_batch is not None:
                 # I believe we need to stop the gradient here
                 predicitionW_u = SoftMax(logitsW_u).detach()
-                mask = predicitionW_u.ge(threshold)
+                values, pseudolabel = torch.max(predicitionW_u, dim=1)
+                mask = values.ge(threshold)
+        
+                unlabeled_samples_accepted = mask.sum()
+                
+                loss_u = (torch.nn.functional.cross_entropy(logitsS_u, pseudolabel,reduction='none') * mask ).mean()
 
-                indices = mask.sum(dim=1).nonzero().flatten()
-                unlabeled_samples_accepted = len(indices)
-                pseudolabel = predicitionW_u.argmax(dim=1)
-
-                if unlabeled_samples_accepted > 0:
-                    loss_u = torch.nn.functional.cross_entropy(logitsS_u[indices,:], pseudolabel[indices],reduction='sum') / y_u.size()[0]
-
-                correct_pseudolabels = (pseudolabel[indices] == y_u[indices]).sum()
+                correct_pseudolabels = ((pseudolabel == y_u) * mask).sum()
 
             loss = loss_l + lambda_u * loss_u
 
