@@ -93,7 +93,7 @@ class RandAugmentTransform:
         pass
 
     def __call__(self, x):
-        no_of_transformations = random.randint(1, len(transformations))
+        no_of_transformations = 2
         operations = random.choices(transformations, k=no_of_transformations)
 
         for op in operations:
