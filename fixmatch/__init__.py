@@ -79,14 +79,14 @@ def train(net, labeled_dataloader, unlabeled_dataloader, validation_dataloader, 
             total_loss_u += loss_u
             batches += 1
 
-            train_bar.set_description('Train loss: {:.4f}, Unlabeled samples: {}, Accuracy of pseudolabels: {:.4f}, LR: {:.4f}'.format(total_loss/batches, unlabeled_samples_accepted, total_correct/(total_accepted+1e-20), lr))
-
             # Cosine learning rate decay (stop decaying if there is leftovers from the "epoch")
             if step < steps:
                 lr = initial_lr * math.cos(7 * math.pi * step / (16 * steps))
                 for group in optimizer.param_groups:
                     group['lr'] = lr
             step += 1
+
+            train_bar.set_description('Train loss: {:.4f}, Unlabeled samples: {}, Accuracy of pseudolabels: {:.4f}, LR: {:.4f}'.format(total_loss/batches, unlabeled_samples_accepted, total_correct/(total_accepted+1e-20), lr))
 
         # Save logs and weights
         if (step == batches or step % 1000 == 0 or step >= steps) and weight_dir is not None:
