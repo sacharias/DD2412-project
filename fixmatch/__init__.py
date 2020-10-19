@@ -18,6 +18,7 @@ def train(net, labeled_dataloader, unlabeled_dataloader, validation_dataloader, 
     CrossEntropyLoss = nn.CrossEntropyLoss(reduction='mean')
     SoftMax = nn.Softmax(dim=1)
     initial_lr = optimizer.param_groups[0]['lr']
+    next_val, next_save = 0, 0
 
     if unlabeled_dataloader is None:
         unlabeled_dataloader = [None] * len(labeled_dataloader)
@@ -91,14 +92,16 @@ def train(net, labeled_dataloader, unlabeled_dataloader, validation_dataloader, 
             train_bar.set_description('Train loss: {:.4f}, Unlabeled samples: {}, Accuracy of pseudolabels: {:.4f}, LR: {:.4f}'.format(total_loss/batches, unlabeled_samples_accepted, total_correct/(total_accepted+1e-20), lr))
 
         # Save logs and weights
-        if (step % 1000 == 0 or step >= steps) and weight_dir is not None:
+        if (step >= next_save or step >= steps) and weight_dir is not None:
+            next_save += 1000
             save_weights(weight_dir=weight_dir,
                          step=step,
                          net=net.state_dict(),
                          optimizer=optimizer.state_dict(),
                          ema=ema_model.emamodel.state_dict())
-        if step == batches or step % 500 == 0 or step >= steps:
+        if step >= next_val or step >= steps:
             # Calculate val_loss/acc
+            next_val += 500
             net.eval()
             with torch.no_grad():
                 total_val, correct_val, loss_val = 0, 0, 0.0
