@@ -91,12 +91,13 @@ def train(net, labeled_dataloader, unlabeled_dataloader, validation_dataloader, 
             train_bar.set_description('Train loss: {:.4f}, Unlabeled samples: {}, Accuracy of pseudolabels: {:.4f}, LR: {:.4f}'.format(total_loss/batches, unlabeled_samples_accepted, total_correct/(total_accepted+1e-20), lr))
 
         # Save logs and weights
-        if (step == batches or step % 1000 == 0 or step >= steps) and weight_dir is not None:
+        if (step % 1000 == 0 or step >= steps) and weight_dir is not None:
             save_weights(weight_dir=weight_dir,
                          step=step,
                          net=net.state_dict(),
                          optimizer=optimizer.state_dict(),
                          ema=ema_model.emamodel.state_dict())
+        if step == batches or step % 500 == 0 or step >= steps:
             # Calculate val_loss/acc
             net.eval()
             with torch.no_grad():
