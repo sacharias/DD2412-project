@@ -8,30 +8,8 @@ from augment.cutout import CutoutTransform
 
 
 # Augmentation types
-weakly_augment = transforms.Compose(
-    [
-        transforms.RandomHorizontalFlip(p=0.5),
-        transforms.RandomAffine(0, translate=(0.125, 0.125)),
-        transforms.ToTensor(),
-        transforms.Normalize((0.4914, 0.4822, 0.4465),(0.2470, 0.2435, 0.2616))
-    ]
-)
 
-strongly_augment = transforms.Compose(
-    [
-        CutoutTransform(),
-        RandAugmentTransform(),
-        transforms.ToTensor(),
-        transforms.Normalize((0.4914, 0.4822, 0.4465),(0.2470, 0.2435, 0.2616))
-    ]
-)
 
-normalize = transforms.Compose(
-    [
-        transforms.ToTensor(),
-        transforms.Normalize((0.4914, 0.4822, 0.4465),(0.2470, 0.2435, 0.2616))
-    ]
-)
 
 
 class Augmented(Dataset):
@@ -48,11 +26,33 @@ class Augmented(Dataset):
         return len(self.data)
 
 
-def create_dataset_split(dataset, labeled_size, validation_size):
+def create_dataset_split(dataset, labeled_size, validation_size, normalize):
     """Randomly split a dataset into non-overlapping new datasets of given lengths.
     Optionally fix the generator for reproducible results with the seed.
     """
 
+    weakly_augment =transforms.Compose([
+        transforms.RandomHorizontalFlip(p=0.5),
+        transforms.RandomAffine(0, translate=(0.125, 0.125)),
+        transforms.ToTensor(),
+        normalize
+    ])
+
+
+    strongly_augment =transforms.Compose([
+            CutoutTransform(),
+            RandAugmentTransform(),
+            transforms.ToTensor(),
+            normalize
+    ])
+
+
+    validation =transforms.Compose([
+            transforms.ToTensor(),
+            normalize
+    ])
+
+    
     total_size = labeled_size + validation_size
 
     part1, part2, part3 = torch.utils.data.random_split(dataset, [labeled_size, len(dataset) - total_size, validation_size])
@@ -63,8 +63,8 @@ def create_dataset_split(dataset, labeled_size, validation_size):
     # the accuracy on the unlabeled samples, training on it would bias the metric, and therefore we don't add the labeled data.
     # However, to add the labeled data change this to the following line:
     # unlabled_dataset = unlabeled(ConcatDataset([part1, part2]), weakly_augment, strongly_augment)
-    unlabled_dataset = Augmented(part2, weakly_augment, strongly_augment)
+    unlabled_dataset = Augmented(part2,weakly_augment, strongly_augment)
 
-    validation_dataset = Augmented(part3, normalize)
+    validation_dataset = Augmented(part3, validation)
 
     return labeled_dataset, unlabled_dataset, validation_dataset
