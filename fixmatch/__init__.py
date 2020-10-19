@@ -34,7 +34,9 @@ def train(net, labeled_dataloader, unlabeled_dataloader, validation_dataloader, 
 
     step = 0
     while step < steps:
-        train_bar = tqdm(zip(labeled_dataloader, unlabeled_dataloader))
+        print(f'Step {step}/{steps}')
+
+        train_bar = tqdm(zip(labeled_dataloader, unlabeled_dataloader), total=min(len(labeled_dataloader, len(unlabeled_dataloader))))
         total_loss, total_loss_l, total_loss_u = 0.0, 0.0, 0.0
         total_correct, total_accepted, batches = 0, 0, 0
 
