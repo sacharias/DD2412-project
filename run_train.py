@@ -38,6 +38,16 @@ if args.dataset == 'CIFAR-10':
         download=True,
         transform=None
     )
+    normalize = transforms.Normalize((0.4914, 0.4822, 0.4465),(0.2470, 0.2435, 0.2616))
+elif args.dataset == 'CIFAR-100':  
+    trainset = torchvision.datasets.CIFAR100(
+          root='./data',
+          train=True,
+          download=True,
+          transform=None
+      )
+    normalize = transforms.Normalize((0.5071, 0.4867, 0.4408),(0.2675, 0.2565, 0.2761))
+   
 else:
     raise Exception(f'Dataset "{args.dataset}" is not implemented.')
 
@@ -46,7 +56,9 @@ labeled_dataset, unlabled_dataset, validation_dataset = create_dataset_split(
     dataset=trainset,
     labeled_size=args.labeled_size,
     validation_size=args.validation_size,
+    normalize=normalize
 )
+
 
 # Create dataloaders
 labeled_dataloader = DataLoader(labeled_dataset, batch_size=args.batch_size, shuffle=True, num_workers=4, pin_memory=True)
