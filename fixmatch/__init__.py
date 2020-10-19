@@ -4,44 +4,36 @@ import torch
 import torch.nn as nn
 from tqdm import tqdm
 
-def save_weights(weight_dir, epoch, loss, net, optimizer, ema):
+def save_weights(weight_dir, step, net, optimizer, ema):
     if weight_dir is not None:
         torch.save({
-            'epoch': epoch,
             'model_state_dict': net,
             'optimizer_state_dict': optimizer,
-            'loss': loss,
-        }, os.path.join(weight_dir, f'net-{epoch:05d}.pt'))
-        torch.save(ema, os.path.join(weight_dir, f'ema-{epoch:05d}.pt'))
+        }, os.path.join(weight_dir, f'net-{step:06d}.pt'))
+        torch.save(ema, os.path.join(weight_dir, f'ema-{step:06d}.pt'))
 
-def train(net, labeled_dataloader, unlabeled_dataloader, validation_dataloader, optimizer, threshold, lambda_u, epochs, ema_model, device, log_file=None, weight_dir=None):
+def train(net, labeled_dataloader, unlabeled_dataloader, validation_dataloader, optimizer, threshold, lambda_u, steps, ema_model, device, log_file=None, weight_dir=None):
     net.train()
     net.to(device)
     CrossEntropyLoss = nn.CrossEntropyLoss(reduction='mean')
     SoftMax = nn.Softmax(dim=1)
+    initial_lr = optimizer.param_groups[0]['lr']
 
     if unlabeled_dataloader is None:
         unlabeled_dataloader = [None] * len(labeled_dataloader)
 
-    # Save values for cosine learning rate decay
-    initial_lr = optimizer.param_groups[0]['lr']
-    total_steps = min(len(labeled_dataloader), len(unlabeled_dataloader)) * epochs
-    current_step = 0
-
     # Write header to log file and save initial weights
     if log_file is not None:
         with open(log_file, 'w') as f:
-            f.write('epoch,train_loss,train_loss_l,train_loss_u,val_loss,val_acc,pseudo_acc,accepted\n')
+            f.write('step,train_loss,train_loss_l,train_loss_u,val_loss,val_acc,pseudo_acc,accepted\n')
     save_weights(weight_dir=weight_dir,
-                 epoch=0,
-                 loss=-1,
+                 step=0,
                  net=net.state_dict(),
                  optimizer=optimizer.state_dict(),
                  ema=ema_model.emamodel.state_dict())
 
-    for epoch in range(1, epochs + 1):
-        print('Current epoch:', epoch)
-
+    step = 0
+    while step < steps:
         train_bar = tqdm(zip(labeled_dataloader, unlabeled_dataloader))
         total_loss, total_loss_l, total_loss_u = 0.0, 0.0, 0.0
         total_correct, total_accepted, batches = 0, 0, 0
@@ -51,7 +43,6 @@ def train(net, labeled_dataloader, unlabeled_dataloader, validation_dataloader, 
             if unlabeled_batch is not None:
                 xW_u, xS_u, y_u = unlabeled_batch[0].to(device), unlabeled_batch[1].to(device), unlabeled_batch[2].to(device)
 
-            # Maybe we could cat the tensors then chunk the result
             logits_l = net(x_l)
             if unlabeled_batch is not None:
                 logitsW_u = net(xW_u)
@@ -68,7 +59,7 @@ def train(net, labeled_dataloader, unlabeled_dataloader, validation_dataloader, 
 
                 unlabeled_samples_accepted = mask.sum()
 
-                loss_u = (torch.nn.functional.cross_entropy(logitsS_u, pseudolabel,reduction='none') * mask ).mean()
+                loss_u = (torch.nn.functional.cross_entropy(logitsS_u, pseudolabel,reduction='none') * mask).mean()
 
                 correct_pseudolabels = ((pseudolabel == y_u) * mask).sum()
 
@@ -88,19 +79,19 @@ def train(net, labeled_dataloader, unlabeled_dataloader, validation_dataloader, 
             total_loss_u += loss_u
             batches += 1
 
-            # Cosine learning rate decay
-            lr = initial_lr * math.cos(7 * math.pi * current_step / (16 * total_steps))
-            for group in optimizer.param_groups:
-                group['lr'] = lr
-            current_step += 1
-
             train_bar.set_description('Train loss: {:.4f}, Unlabeled samples: {}, Accuracy of pseudolabels: {:.4f}, LR: {:.4f}'.format(total_loss/batches, unlabeled_samples_accepted, total_correct/(total_accepted+1e-20), lr))
 
+            # Cosine learning rate decay (stop decaying if there is leftovers from the "epoch")
+            if step < steps:
+                lr = initial_lr * math.cos(7 * math.pi * step / (16 * steps))
+                for group in optimizer.param_groups:
+                    group['lr'] = lr
+            step += 1
+
         # Save logs and weights
-        if (epoch == 1 or epoch % 10 == 0 or epoch == epochs) and weight_dir is not None:
+        if (step == batches or step % 1000 == 0 or step >= steps) and weight_dir is not None:
             save_weights(weight_dir=weight_dir,
-                         epoch=epoch,
-                         loss=total_loss/batches,
+                         step=step,
                          net=net.state_dict(),
                          optimizer=optimizer.state_dict(),
                          ema=ema_model.emamodel.state_dict())
@@ -118,7 +109,6 @@ def train(net, labeled_dataloader, unlabeled_dataloader, validation_dataloader, 
             net.train()
         if log_file is not None:
             with open(log_file, 'a') as f:
-                f.write(f'{epoch},{total_loss/batches:.4f},{total_loss_l/batches:.4f},{total_loss_u/batches:.4f},{loss_val/total_val:.4f},{correct_val/total_val:.4f},{total_correct/(total_accepted+1e-20):.4f},{total_accepted}\n')
-
+                f.write(f'{step},{total_loss/batches:.4f},{total_loss_l/batches:.4f},{total_loss_u/batches:.4f},{loss_val/total_val:.4f},{correct_val/total_val:.4f},{total_correct/(total_accepted+1e-20):.4f},{total_accepted}\n')
 
     return total_loss/batches, total_correct/(total_accepted+1e-20)

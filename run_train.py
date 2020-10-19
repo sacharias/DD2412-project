@@ -19,7 +19,7 @@ parser.add_argument('--labeled_size', type=int, help='Number of labeled samples.
 parser.add_argument('--validation_size', type=int, help='Number of validation samples.', default=1000)
 parser.add_argument('--mu', type=int, help='There is a 1:mu ratio between labeled and unlabeled samples.', default=7)
 parser.add_argument('--batch_size', type=int, help='The size of a labeled batch.', default=64)
-parser.add_argument('--epochs', type=int, help='The number of epochs.', default=1024)
+parser.add_argument('--steps', type=int, help='The total number of training steps.', default=2**16)
 parser.add_argument('--threshold', type=float, help='The confidence threshold for pseudo labels.', default=0.95)
 parser.add_argument('--lambda_u', type=float, help='The weight for the unlabled loss.', default=1.0)
 parser.add_argument('--decay', type=float, help='The EMA decay.', default=0.999)
@@ -98,7 +98,7 @@ train_loss, pseudolabel_acc = fixmatch.train(
     optimizer=optimizer,
     threshold=args.threshold,
     lambda_u=args.lambda_u,
-    epochs=args.epochs,
+    steps=args.steps,
     ema_model=ema_model,
     device=device,
     log_file=os.path.join(args.history, 'log.csv'),
