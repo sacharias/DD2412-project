@@ -31,7 +31,7 @@ def train(net, labeled_dataloader, unlabeled_dataloader, validation_dataloader, 
     # Write header to log file and save initial weights
     if log_file is not None:
         with open(log_file, 'w') as f:
-            f.write('epoch,train_loss,val_loss,val_acc,pseudo_acc,accepted\n')
+            f.write('epoch,train_loss,train_loss_l,train_loss_u,val_loss,val_acc,pseudo_acc,accepted\n')
     save_weights(weight_dir=weight_dir,
                  epoch=0,
                  loss=-1,
@@ -42,8 +42,9 @@ def train(net, labeled_dataloader, unlabeled_dataloader, validation_dataloader, 
     for epoch in range(1, epochs + 1):
         print('Current epoch:', epoch)
 
-        data_loader = zip(labeled_dataloader, unlabeled_dataloader)
-        total_loss, total_num, total_correct, total_accepted, train_bar = 0.0, 0, 0, 0, tqdm(data_loader)
+        train_bar = tqdm(zip(labeled_dataloader, unlabeled_dataloader))
+        total_loss, total_loss_l, total_loss_u = 0.0, 0.0, 0.0
+        total_correct, total_accepted, batches = 0, 0, 0
 
         for labeled_batch, unlabeled_batch in train_bar:
             x_l, y_l = labeled_batch[0].to(device), labeled_batch[1].to(device)
@@ -64,9 +65,9 @@ def train(net, labeled_dataloader, unlabeled_dataloader, validation_dataloader, 
                 predicitionW_u = SoftMax(logitsW_u).detach()
                 values, pseudolabel = torch.max(predicitionW_u, dim=1)
                 mask = values.ge(threshold)
-        
+
                 unlabeled_samples_accepted = mask.sum()
-                
+
                 loss_u = (torch.nn.functional.cross_entropy(logitsS_u, pseudolabel,reduction='none') * mask ).mean()
 
                 correct_pseudolabels = ((pseudolabel == y_u) * mask).sum()
@@ -79,13 +80,13 @@ def train(net, labeled_dataloader, unlabeled_dataloader, validation_dataloader, 
 
             ema_model.update(net)
 
-            total_samples = y_l.size()[0] + y_u.size()[0]
-
             total_correct += correct_pseudolabels
             total_accepted += unlabeled_samples_accepted
 
-            total_num += total_samples
-            total_loss += loss.item() * total_samples
+            total_loss += loss
+            total_loss_l += loss_l
+            total_loss_u += loss_u
+            batches += 1
 
             # Cosine learning rate decay
             lr = initial_lr * math.cos(7 * math.pi * current_step / (16 * total_steps))
@@ -93,13 +94,13 @@ def train(net, labeled_dataloader, unlabeled_dataloader, validation_dataloader, 
                 group['lr'] = lr
             current_step += 1
 
-            train_bar.set_description('Train loss: {:.4f}, Unlabeled samples: {}, Accuracy of pseudolabels: {:.4f}, LR: {:.4f}'.format(total_loss/total_num, unlabeled_samples_accepted, total_correct/(total_accepted+1e-20), lr))
+            train_bar.set_description('Train loss: {:.4f}, Unlabeled samples: {}, Accuracy of pseudolabels: {:.4f}, LR: {:.4f}'.format(total_loss/batches, unlabeled_samples_accepted, total_correct/(total_accepted+1e-20), lr))
 
         # Save logs and weights
         if (epoch == 1 or epoch % 10 == 0 or epoch == epochs) and weight_dir is not None:
             save_weights(weight_dir=weight_dir,
                          epoch=epoch,
-                         loss=total_loss / total_num,
+                         loss=total_loss/batches,
                          net=net.state_dict(),
                          optimizer=optimizer.state_dict(),
                          ema=ema_model.emamodel.state_dict())
@@ -117,7 +118,7 @@ def train(net, labeled_dataloader, unlabeled_dataloader, validation_dataloader, 
             net.train()
         if log_file is not None:
             with open(log_file, 'a') as f:
-                f.write(f'{epoch},{total_loss / total_num:.4f},{loss_val / total_val:.4f},{correct_val / total_val:.4f},{total_correct/(total_accepted+1e-20):.4f},{total_accepted}\n')
+                f.write(f'{epoch},{total_loss/batches:.4f},{total_loss_l/batches:.4f},{total_loss_u/batches:.4f},{loss_val/total_val:.4f},{correct_val/total_val:.4f},{total_correct/(total_accepted+1e-20):.4f},{total_accepted}\n')
 
 
-    return total_loss/total_num, total_correct/(total_accepted+1e-20)
+    return total_loss/batches, total_correct/(total_accepted+1e-20)

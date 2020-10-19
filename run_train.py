@@ -14,9 +14,9 @@ from fixmatch.ema import EMA
 
 # Parse arguments
 parser = ArgumentParser(description='Train using FixMatch.')
-parser.add_argument('--dataset', type=str, help='The dataset to use.', default='CIFAR-10')
+parser.add_argument('dataset', type=str, help='The dataset to use (CIFAR-10 or CIFAR-100).')
 parser.add_argument('--labeled_size', type=int, help='Number of labeled samples.', default=4000)
-parser.add_argument('--validation_size', type=int, help='Number of validation samples.', default=10000)
+parser.add_argument('--validation_size', type=int, help='Number of validation samples.', default=1000)
 parser.add_argument('--mu', type=int, help='There is a 1:mu ratio between labeled and unlabeled samples.', default=7)
 parser.add_argument('--batch_size', type=int, help='The size of a labeled batch.', default=64)
 parser.add_argument('--epochs', type=int, help='The number of epochs.', default=1024)
