@@ -39,7 +39,7 @@ if args.dataset == 'CIFAR-10':
         transform=None
     )
     normalize = transforms.Normalize((0.4914, 0.4822, 0.4465),(0.2470, 0.2435, 0.2616))
-elif args.dataset == 'CIFAR-100':  
+elif args.dataset == 'CIFAR-100':
     trainset = torchvision.datasets.CIFAR100(
           root='./data',
           train=True,
@@ -47,7 +47,7 @@ elif args.dataset == 'CIFAR-100':
           transform=None
       )
     normalize = transforms.Normalize((0.5071, 0.4867, 0.4408),(0.2675, 0.2565, 0.2761))
-   
+
 else:
     raise Exception(f'Dataset "{args.dataset}" is not implemented.')
 
@@ -85,7 +85,7 @@ print(info)
 with open(os.path.join(args.history, 'info.txt'), 'w') as f:
     f.write(info + '\n')
 
-model = WRN(num_classes=10).to(device)
+model = WRN(num_classes=len(trainset.classes)).to(device)
 
 optimizer = optim.SGD(model.parameters(), lr=0.03, momentum=0.9, weight_decay=0.0005,  nesterov=True)
 ema_model = EMA(args.decay, model, device)
