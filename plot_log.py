@@ -7,6 +7,7 @@ parser.add_argument('x', type=str, help='The attribute to use as x.')
 parser.add_argument('y', type=str, help='The attribute to use as y.')
 parser.add_argument('--xlabel', type=str, help='The label for the x-axis.')
 parser.add_argument('--ylabel', type=str, help='The label for the y-axis.')
+parser.add_argument('--stepsize', type=int, help='The stepsize for the x and y lists.', default=1)
 args = parser.parse_args()
 
 args.xlabel = args.x if args.xlabel is None else args.xlabel
@@ -22,7 +23,7 @@ for entry in zip(*lines):
 
 def plot(x, y, xlabel, ylabel):
     plt.figure()
-    plt.plot(x, y)
+    plt.plot(x[0:-1:args.stepsize], y[0:-1:args.stepsize])
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
     plt.show()
