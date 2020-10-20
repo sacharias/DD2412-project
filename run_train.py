@@ -23,8 +23,10 @@ parser.add_argument('--steps', type=int, help='The total number of training step
 parser.add_argument('--threshold', type=float, help='The confidence threshold for pseudo labels.', default=0.95)
 parser.add_argument('--lambda_u', type=float, help='The weight for the unlabled loss.', default=1.0)
 parser.add_argument('--decay', type=float, help='The EMA decay.', default=0.999)
+parser.add_argument('--initial_lr', type=float, help='The initial learning rate.', default=0.03)
 parser.add_argument('--seed', type=int, help='The random seed.', default=1337)
 parser.add_argument('--history', type=str, help='The directory where the training history should be saved.', default=f'history/train-{datetime.now().strftime("%Y-%m-%d-%H-%M-%S")}')
+parser.add_argument('--resume', type=int, help='The step to resume training at.')
 args = parser.parse_args()
 
 # Seed the RNG
@@ -69,7 +71,8 @@ validation_dataloader = DataLoader(validation_dataset, batch_size=args.batch_siz
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
 # Create history directory
-os.mkdir(args.history)
+if not os.path.exists(args.history):
+    os.mkdir(args.history)
 
 # Print and save info
 info = '\n'.join([
@@ -79,6 +82,7 @@ info = '\n'.join([
     f'    Size of validation dataset: {len(validation_dataset)}',
     f'    Training using device: {device}',
     f'    Saving history to: {args.history}',
+    f'    Resuming training at step: {args.resume}' if args.resume is not None else '',
     f'\nArgs: {vars(args)}'
 ])
 print(info)
@@ -86,9 +90,15 @@ with open(os.path.join(args.history, 'info.txt'), 'w') as f:
     f.write(info + '\n')
 
 model = WRN(num_classes=len(trainset.classes)).to(device)
-
-optimizer = optim.SGD(model.parameters(), lr=0.03, momentum=0.9, weight_decay=0.0005,  nesterov=True)
+optimizer = optim.SGD(model.parameters(), lr=args.initial_lr, momentum=0.9, weight_decay=0.0005,  nesterov=True)
 ema_model = EMA(args.decay, model, device)
+
+if args.resume is not None:
+    net_checkpoint = torch.load(os.path.join(args.history, f'net-{args.resume:06d}.pt'), map_location=device)
+    ema_checkpoint = torch.load(os.path.join(args.history, f'ema-{args.resume:06d}.pt'), map_location=device)
+    model.load_state_dict(net_checkpoint['model_state_dict'])
+    optimizer.load_state_dict(net_checkpoint['optimizer_state_dict'])
+    ema_model.emamodel.load_state_dict(ema_checkpoint)
 
 train_loss, pseudolabel_acc = fixmatch.train(
     net=model,
@@ -98,9 +108,11 @@ train_loss, pseudolabel_acc = fixmatch.train(
     optimizer=optimizer,
     threshold=args.threshold,
     lambda_u=args.lambda_u,
+    initial_lr=args.initial_lr,
     steps=args.steps,
     ema_model=ema_model,
     device=device,
     log_file=os.path.join(args.history, 'log.csv'),
-    weight_dir=args.history
+    weight_dir=args.history,
+    resume=args.resume
 )

@@ -12,28 +12,38 @@ def save_weights(weight_dir, step, net, optimizer, ema):
         }, os.path.join(weight_dir, f'net-{step:06d}.pt'))
         torch.save(ema, os.path.join(weight_dir, f'ema-{step:06d}.pt'))
 
-def train(net, labeled_dataloader, unlabeled_dataloader, validation_dataloader, optimizer, threshold, lambda_u, steps, ema_model, device, log_file=None, weight_dir=None):
+def train(net, labeled_dataloader, unlabeled_dataloader, validation_dataloader, optimizer, threshold, lambda_u, initial_lr, steps, ema_model, device, log_file=None, weight_dir=None, resume=None):
     net.train()
     net.to(device)
     CrossEntropyLoss = nn.CrossEntropyLoss(reduction='mean')
     SoftMax = nn.Softmax(dim=1)
-    initial_lr = optimizer.param_groups[0]['lr']
-    next_val, next_save = 0, 0
+
+    # Used for knowing when to save/log/evaluate
+    next_val = 0 if resume is None else resume + 500
+    next_save = 0 if resume is None else resume + 1000
 
     if unlabeled_dataloader is None:
         unlabeled_dataloader = [None] * len(labeled_dataloader)
 
     # Write header to log file and save initial weights
-    if log_file is not None:
+    if log_file is not None and resume is None:
         with open(log_file, 'w') as f:
             f.write('step,train_loss,train_loss_l,train_loss_u,val_loss,val_acc,pseudo_acc,accepted\n')
-    save_weights(weight_dir=weight_dir,
-                 step=0,
-                 net=net.state_dict(),
-                 optimizer=optimizer.state_dict(),
-                 ema=ema_model.emamodel.state_dict())
 
-    step = 0
+    if resume is None:
+        save_weights(weight_dir=weight_dir,
+                    step=0,
+                    net=net.state_dict(),
+                    optimizer=optimizer.state_dict(),
+                    ema=ema_model.emamodel.state_dict())
+
+    step = 0 if resume is None else resume
+    if resume is not None:
+        # Set LR if resuming training
+        lr = initial_lr * math.cos(7 * math.pi * step / (16 * steps))
+        for group in optimizer.param_groups:
+            group['lr'] = lr
+
     while step < steps:
         print(f'Step {step}/{steps}')
 
