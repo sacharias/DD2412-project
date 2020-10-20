@@ -65,7 +65,7 @@ def create_dataset_split(dataset, labeled_size, validation_size, normalize):
 
     part1 = torch.utils.data.Subset(trainset, labeled_idx)
     part2 = torch.utils.data.Subset(trainset, unlabeled_idx)
-    part = torch.utils.data.Subset(trainset, valid_idx)
+    part3 = torch.utils.data.Subset(trainset, valid_idx)
 
     labeled_dataset = Augmented(part1, weakly_augment)
 
