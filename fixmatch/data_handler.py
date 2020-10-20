@@ -2,7 +2,7 @@ import torch
 import torchvision
 from torchvision import transforms
 from torch.utils.data import Dataset, DataLoader, ConcatDataset
-
+import numpy as np
 from augment.rand_augment import RandAugmentTransform
 from augment.cutout import CutoutTransform
 
@@ -52,10 +52,20 @@ def create_dataset_split(dataset, labeled_size, validation_size, normalize):
             normalize
     ])
 
-    
-    total_size = labeled_size + validation_size
+    targets = dataset.targets
 
-    part1, part2, part3 = torch.utils.data.random_split(dataset, [labeled_size, len(dataset) - total_size, validation_size])
+    labeled_idx, valid_idx= train_test_split(
+    np.arange(len(targets)),
+    train_size=labeled_size,
+    test_size=validation_size,
+    shuffle=True,
+    stratify=targets)
+
+    unlabeled_idx = np.setdiff1d(np.arange(len(targets)),np.concatenate((labeled_idx,valid_idx)))
+
+    part1 = torch.utils.data.Subset(trainset, labeled_idx)
+    part2 = torch.utils.data.Subset(trainset, unlabeled_idx)
+    part = torch.utils.data.Subset(trainset, valid_idx)
 
     labeled_dataset = Augmented(part1, weakly_augment)
 
