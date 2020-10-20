@@ -63,9 +63,9 @@ def create_dataset_split(dataset, labeled_size, validation_size, normalize):
 
     unlabeled_idx = np.setdiff1d(np.arange(len(targets)),np.concatenate((labeled_idx,valid_idx)))
 
-    part1 = torch.utils.data.Subset(trainset, labeled_idx)
-    part2 = torch.utils.data.Subset(trainset, unlabeled_idx)
-    part3 = torch.utils.data.Subset(trainset, valid_idx)
+    part1 = torch.utils.data.Subset(dataset, labeled_idx)
+    part2 = torch.utils.data.Subset(dataset, unlabeled_idx)
+    part3 = torch.utils.data.Subset(dataset, valid_idx)
 
     labeled_dataset = Augmented(part1, weakly_augment)
 
