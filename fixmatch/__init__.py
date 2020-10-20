@@ -19,7 +19,7 @@ def train(net, labeled_dataloader, unlabeled_dataloader, validation_dataloader, 
     SoftMax = nn.Softmax(dim=1)
 
     # Used for knowing when to save/log/evaluate
-    next_val = 0 if resume is None else resume + 500
+    next_val = 0 if resume is None else resume
     next_save = 0 if resume is None else resume + 1000
 
     if unlabeled_dataloader is None:
