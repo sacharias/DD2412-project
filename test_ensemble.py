@@ -18,7 +18,7 @@ def get_predictions(model):
     with torch.no_grad():
         predictions = torch.zeros(len(testset), dtype=torch.int64)
         offset = 0
-        for x, y in tqdm(testloader):
+        for x, y in testloader:
             x, y = x.to(device), y.to(device)
             logits = model(x)
             _, predicted = torch.max(logits, 1)
@@ -69,7 +69,7 @@ if __name__ == '__main__':
 
     # Aggregate predictions
     one_hot_sum = torch.zeros((len(testset), len(testset.classes)), dtype=torch.int64)
-    for path in args.paths:
+    for path in tqdm(args.paths):
         load_model(model=model, path=path)
         predictions = get_predictions(model=model)
         one_hot = torch.nn.functional.one_hot(predictions, num_classes=len(testset.classes))
