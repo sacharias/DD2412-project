@@ -1,0 +1,8 @@
+Starting training with:
+    Size of labeled dataset: 4000
+    Size of unlabeled dataset: 45000
+    Size of validation dataset: 1000
+    Training using device: cuda:0
+    Saving history to: history/train-2020-10-19-13-11-50
+
+Args: {'dataset': 'CIFAR-10', 'labeled_size': 4000, 'validation_size': 1000, 'mu': 7, 'batch_size': 64, 'steps': 65536, 'threshold': 0.95, 'lambda_u': 1.0, 'decay': 0.999, 'seed': 1337, 'history': 'history/train-2020-10-19-13-11-50'}
