@@ -3,9 +3,6 @@ import numpy as np
 class CutoutTransform:
     """Implementation of Cutout.
 
-    For CIFAR-10, use size 16.
-    For CIFAR-100, use size 8.
-
     See: https://arxiv.org/abs/1708.04552
     """
 
